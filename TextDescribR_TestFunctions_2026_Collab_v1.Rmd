@@ -290,7 +290,7 @@ return(clean1_list)
 try_it_out <- clean_1(Test_Text1, text_field='my_text', doc_id_field='doc_id')
 head(try_it_out, n=75)
 colnames(try_it_out$data)
-write.csv(try_it_out, "try_it_out.csv", row.names=F)
+#write.csv(try_it_out, "try_it_out.csv", row.names=F)
 ```
 
 ## clean_2
@@ -331,4 +331,12 @@ computes all other lexical level analytics on each word (one-per-row). <br>
 6. Convert `doc_id_field` to factor, group by `doc_id_field` for summary stats <br>
 7. Check to make sure that word count per sentence is correct <br>
 8. Make sure word sequence and sent sequence are correct <br>
+
+
+
+I'm adding some test prose and code down here to test the markdown.
+
+```{r}
+try_it_out$stat2_mean_sent
+```
 
