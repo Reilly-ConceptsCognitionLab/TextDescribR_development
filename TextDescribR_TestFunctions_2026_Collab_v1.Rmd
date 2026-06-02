@@ -52,6 +52,10 @@ str(Test_Text1)
 
 #Load Test_Text2
 
+
+#load SampleText.csv
+sampleText <- read.csv(file = "SampleText.csv", header = TRUE)
+
 ```
 
 # Variables for Summary Table
@@ -291,6 +295,10 @@ try_it_out <- clean_1(Test_Text1, text_field='my_text', doc_id_field='doc_id')
 head(try_it_out, n=75)
 colnames(try_it_out$data)
 #write.csv(try_it_out, "try_it_out.csv", row.names=F)
+
+
+
+sampleTest <- clean_1(sampleText, text_field = "my_text", doc_id_field = "doc_id")
 ```
 
 ## clean_2
