@@ -154,6 +154,14 @@ Considerations and questions to resolve: <br>
 To do steps (not executed yet): <br>
 1) make sure replacements are working <br>
 
+
+```{r}
+dat = sampleText
+text_field = "my_text"
+doc_id_field = "doc_id"
+```
+
+
 ```{r}
 clean_1 <- function(dat, text_field='my_text', doc_id_field='doc_id') {
   #error message to user if failed to specify doc_ID_field
@@ -172,11 +180,20 @@ clean_1 <- function(dat, text_field='my_text', doc_id_field='doc_id') {
   #dat[[text_field]] <- iconv(dat[[text_field]], from = "", to = "UTF-8")
   
   #standrdize text field contents to UTF-8 encoding first
+  # dat <- dat %>%
+  #   dplyr::mutate(text_std = stringi::stri_enc_toutf8(.[[text_field]],
+  #                                                     is_unknown_8bit = TRUE)) %>%
+  #   select(-c(text_field)) %>%
+  #   rename(!!sym(text_field) := text_std)
+  
   dat <- dat %>%
-    dplyr::mutate(text_std = stringi::stri_enc_toutf8(.[[text_field]],
-                                                      is_unknown_8bit = TRUE)) %>%
-    select(-c(text_field)) %>%
-    rename(!!sym(text_field) := text_std)
+  dplyr::mutate(text_std = ifelse(
+    stringi::stri_enc_isutf8(.[[text_field]]),
+    .[[text_field]],  # already UTF-8, leave it alone
+    stringi::stri_enc_toutf8(.[[text_field]], is_unknown_8bit = TRUE)  # only convert if needed
+  )) %>%
+  select(-all_of(text_field)) %>%
+  rename(!!sym(text_field) := text_std)
   
   
 # Select and prepare data
@@ -299,6 +316,7 @@ colnames(try_it_out$data)
 
 
 sampleTest <- clean_1(sampleText, text_field = "my_text", doc_id_field = "doc_id")
+test_df <- sampleTest$data
 ```
 
 ## clean_2
