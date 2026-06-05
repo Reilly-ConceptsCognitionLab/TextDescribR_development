@@ -325,10 +325,23 @@ computes all other lexical level analytics on each word (one-per-row). <br>
 6. Average TTR per-document (clean_2) <br>
 
 ```{r}
+
+
+
+clean_2 <- function(dat) {
+  
 #compute stopword percentage, check each row if stopword matches any item in stopwordword list mark as 0 if not 1.
+  
+  
 
 
 #group_by document number of unique over nrows
+  
+  
+  
+  
+}
+
 
 ```
 
