@@ -365,10 +365,12 @@ clean_2 <- function(dat_list) {
       unique_perc = length(unique(my_text)) / length(my_text))
   
   
+  summary_df <- merge(stopword_summary, unique_word_summary, by = "doc_id")
+  
+  
   
   clean2_list <- list(stage2_data = x,
-                      stopword_summary = stopword_summary,
-                      TTR_summary = unique_word_summary)
+                      summary_df = summary_df)
   
   
   joined_list <- c(dat_list, clean2_list)
@@ -390,8 +392,7 @@ clean_2 <- function(dat_list) {
 ```{r}
 clean2_test <- clean_2(sampleTest)
 
-clean2_test$stopword_summary
-clean2_test$TTR_summary
+clean2_test$summary_df
 ```
 
 
