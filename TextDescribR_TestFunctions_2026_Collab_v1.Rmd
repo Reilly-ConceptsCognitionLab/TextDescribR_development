@@ -152,7 +152,7 @@ Considerations and questions to resolve: <br>
 1) Output two dataframes as a list, One df is the raw corpus split in tidyformat one word per row with several columns of metadata (doc_id, sentence_num, word_num). The other is an empty data table that will get populated with corpus analytics then converted into a journal quality table <br>
 
 To do steps (not executed yet): <br>
-1) make sure replacements are working <br>
+
 
 
 ```{r}
@@ -293,11 +293,14 @@ stat4_range_sent <- sentence_df %>%
 #bind stats and dataframe into list
 #clean1_list <- ls(stat1_doc_count)
 
-clean1_list <- list(data = x,
-                    stat1_doc_count = stat1_doc_count,
-                    stat2_mean_sent = stat2_mean_sent,
-                    stat3_sd_sent = stat3_sd_sent,
-                    stat4_range_sent = stat4_range_sent)
+# clean1_list <- list(data = x,
+#                     stat1_doc_count = stat1_doc_count,
+#                     stat2_mean_sent = stat2_mean_sent,
+#                     stat3_sd_sent = stat3_sd_sent,
+#                     stat4_range_sent = stat4_range_sent)
+
+
+clean1_list <- list(stage1_data = x)
  
  #list
 return(clean1_list)
@@ -328,22 +331,69 @@ computes all other lexical level analytics on each word (one-per-row). <br>
 
 
 
-clean_2 <- function(dat) {
+clean_2 <- function(dat_list) {
+  
+  #what do we want to do about this?
+  load("./utils/Temple_stops25.rda")
   
 #compute stopword percentage, check each row if stopword matches any item in stopwordword list mark as 0 if not 1.
   
+  stopwords <- tolower(Temple_stops25$word)
+  x <- dat_list$stage1_data
+  x <- x %>%
+    mutate(
+      is_stopword = ifelse( #create new variable identifying which words are stopwords
+        is.na(my_text), NA, #if empty do nothing
+        my_text %in% stopwords) #if not empty then TRUE if stopword, FALSE if not stopword
+      )
   
+  
+  #calculate stopword percentage
+  
+  stopword_summary <- x %>%
+    group_by(doc_id) %>%
+    summarize(stopword_perc = sum(is_stopword == TRUE) / n())
 
 
 #group_by document number of unique over nrows
   
+  unique_word_summary <- x %>%
+    group_by(doc_id) %>%
+    summarize(
+      unique_words = length(unique(my_text)),
+      total_words = length(my_text),
+      unique_perc = length(unique(my_text)) / length(my_text))
   
   
+  
+  clean2_list <- list(stage2_data = x,
+                      stopword_summary = stopword_summary,
+                      TTR_summary = unique_word_summary)
+  
+  
+  joined_list <- c(dat_list, clean2_list)
+  
+  
+  return(joined_list)
+
   
 }
 
 
 ```
+
+
+
+# Test clean_2
+
+
+```{r}
+clean2_test <- clean_2(sampleTest)
+
+clean2_test$stopword_summary
+clean2_test$TTR_summary
+```
+
 
 
 
@@ -370,6 +420,7 @@ clean_2 <- function(dat) {
 6. Convert `doc_id_field` to factor, group by `doc_id_field` for summary stats <br>
 7. Check to make sure that word count per sentence is correct <br>
 8. Make sure word sequence and sent sequence are correct <br>
+9. make sure replacements are working <br>
 
 
 
