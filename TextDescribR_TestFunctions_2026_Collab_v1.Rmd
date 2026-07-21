@@ -319,7 +319,7 @@ colnames(try_it_out$data)
 
 
 sampleTest <- clean_1(sampleText, text_field = "my_text", doc_id_field = "doc_id")
-test_df <- sampleTest$data
+test_df <- sampleTest$stage1_data
 ```
 
 ## clean_2
@@ -399,6 +399,77 @@ clean2_test$summary_df
 
 
 
+
+# Summary function to apply to full processed object
+
+
+```{r}
+pipeline_summary <- function(object) {
+  
+  
+  
+  # STAGE 1 SUMMARIZATION
+  stg1_dat <- object$stage1_data
+  
+  tot_doc <- stg1_dat %>%
+    group_by(doc_id) %>%
+    summarize(n = n()) %>%
+    summarize(ndoc = n())
+  
+  sent_per_doc <- stg1_dat %>%
+    group_by(doc_id) %>%
+    summarize(nsent_per_doc = max(as.numeric((SentSeqID_ByDoc)))) %>%
+    summarize(mean_spd = mean(nsent_per_doc),
+              sd_spd = sd(nsent_per_doc),
+              min_spd = min(nsent_per_doc),
+              max_spd = max(nsent_per_doc))
+  
+  
+  word_per_sent_per_doc <- stg1_dat %>%
+    group_by(doc_id, SentSeqID_ByDoc) %>%
+    summarize(nword_per_sent_per_doc = unique(LexStat_WordCount_PerSent)) %>%
+    ungroup() %>%
+    summarize(mean_wpspd = mean(nword_per_sent_per_doc),
+              sd_wpspd = sd(nword_per_sent_per_doc),
+              min_wpspd = min(nword_per_sent_per_doc),
+              max_wpspd = max(nword_per_sent_per_doc))
+  
+  
+  words_per_doc <- test_df %>%
+    group_by(doc_id) %>%
+    summarize(nword_per_doc = n()) %>%
+    summarize(mean_wpd = mean(nword_per_doc),
+              sd_wpd = sd(nword_per_doc),
+              min_wpd = min(nword_per_doc),
+              max_wpd = max(nword_per_doc))
+  
+  
+  
+  sum_list <- list(tot_doc, 
+                   sent_per_doc, 
+                   word_per_sent_per_doc,
+                   words_per_doc)
+  sum <- list_cbind(sum_list)
+  
+  
+  return(sum)
+  
+  
+  
+  
+  
+}
+```
+
+
+
+```{r}
+test <- pipeline_summary(sampleTest)
+```
+
+
+
+
 **do**:
 1. Load lookup database from ConversationAlign (don't store data in package) <br>
 ```{r}
@@ -429,5 +500,59 @@ I'm adding some test prose and code down here to test the markdown.
 
 ```{r}
 try_it_out$stat2_mean_sent
+```
+
+
+
+
+# ARCHIVE CODE
+
+
+```{r}
+
+
+
+
+tot_doc <- test_df %>%
+  group_by(doc_id) %>%
+  summarize(n = n()) %>%
+  summarize(ndoc = n())
+tot_doc
+
+
+sent_per_doc <- test_df %>%
+  group_by(doc_id) %>%
+  summarize(nsent_per_doc = max(as.numeric((SentSeqID_ByDoc)))) %>%
+  summarize(mean_spd = mean(nsent_per_doc),
+            sd_spd = sd(nsent_per_doc),
+            min_spd = min(nsent_per_doc),
+            max_spd = max(nsent_per_doc))
+sent
+
+
+word_per_sent_per_doc <- test_df %>%
+  group_by(doc_id, SentSeqID_ByDoc) %>%
+  summarize(nword_per_sent_per_doc = unique(LexStat_WordCount_PerSent)) %>%
+  ungroup() %>%
+  summarize(mean_wpspd = mean(nword_per_sent_per_doc),
+            sd_wpspd = sd(nword_per_sent_per_doc),
+            min_wpspd = min(nword_per_sent_per_doc),
+            max_wpspd = max(nword_per_sent_per_doc))
+word_per_sent_per_doc
+
+
+words_per_doc <- test_df %>%
+  group_by(doc_id) %>%
+  summarize(nword_per_doc = n()) %>%
+  summarize(mean_wpd = mean(nword_per_doc),
+            sd_wpd = sd(nword_per_doc),
+            min_wpd = min(nword_per_doc),
+            max_wpd = max(nword_per_doc))
+words_per_doc
+
+
+sum_list <- list(tot_doc, sent_per_doc, word_per_sent_per_doc, words_per_doc)
+sum <- list_cbind(sum_list)
+  
 ```
 
