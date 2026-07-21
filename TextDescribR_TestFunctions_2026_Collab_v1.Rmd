@@ -403,6 +403,10 @@ clean2_test$summary_df
 # Summary function to apply to full processed object
 
 
+
+5. Average proportion of stopwords per-document (mean, sd, range) (clean_2) <br>
+6. Average TTR per-document (clean_2) <br>
+
 ```{r}
 pipeline_summary <- function(object) {
   
@@ -411,11 +415,15 @@ pipeline_summary <- function(object) {
   # STAGE 1 SUMMARIZATION
   stg1_dat <- object$stage1_data
   
+  
+  #total num of docs
   tot_doc <- stg1_dat %>%
     group_by(doc_id) %>%
     summarize(n = n()) %>%
     summarize(ndoc = n())
   
+  
+  #sentences per document
   sent_per_doc <- stg1_dat %>%
     group_by(doc_id) %>%
     summarize(nsent_per_doc = max(as.numeric((SentSeqID_ByDoc)))) %>%
@@ -425,6 +433,8 @@ pipeline_summary <- function(object) {
               max_spd = max(nsent_per_doc))
   
   
+  
+  #words per sentence per doc
   word_per_sent_per_doc <- stg1_dat %>%
     group_by(doc_id, SentSeqID_ByDoc) %>%
     summarize(nword_per_sent_per_doc = unique(LexStat_WordCount_PerSent)) %>%
@@ -434,7 +444,7 @@ pipeline_summary <- function(object) {
               min_wpspd = min(nword_per_sent_per_doc),
               max_wpspd = max(nword_per_sent_per_doc))
   
-  
+  #words per document
   words_per_doc <- test_df %>%
     group_by(doc_id) %>%
     summarize(nword_per_doc = n()) %>%
@@ -445,6 +455,37 @@ pipeline_summary <- function(object) {
   
   
   
+  stg2_dat <- object$stage2_data
+  
+  
+  
+  
+  
+  
+  
+  
+  
+    #calculate stopword percentage
+  
+  stopword_summary <- stg2_dat %>%
+    group_by(doc_id) %>%
+    summarize(stopword_perc = sum(is_stopword == TRUE) / n())
+
+
+#group_by document number of unique over nrows
+  
+  unique_word_summary <- x %>%
+    group_by(doc_id) %>%
+    summarize(
+      unique_words = length(unique(my_text)),
+      total_words = length(my_text),
+      unique_perc = length(unique(my_text)) / length(my_text))
+  
+  
+  
+  
+  
+  # BINDING TOGETHER
   sum_list <- list(tot_doc, 
                    sent_per_doc, 
                    word_per_sent_per_doc,
@@ -465,6 +506,7 @@ pipeline_summary <- function(object) {
 
 ```{r}
 test <- pipeline_summary(sampleTest)
+test
 ```
 
 
