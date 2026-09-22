@@ -473,8 +473,9 @@ pipeline_summary <- function(object) {
 
 
 #group_by document number of unique over nrows
+#what to do with this?
   
-  unique_word_summary <- x %>%
+  unique_word_summary <- stg2_dat %>%
     group_by(doc_id) %>%
     summarize(
       unique_words = length(unique(my_text)),
@@ -505,7 +506,7 @@ pipeline_summary <- function(object) {
 
 
 ```{r}
-test <- pipeline_summary(sampleTest)
+test <- pipeline_summary(clean2_test)
 test
 ```
 
