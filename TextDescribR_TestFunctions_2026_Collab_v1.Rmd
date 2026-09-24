@@ -39,6 +39,24 @@ registerS3method("knit_print", "data.frame", print.me)
 #to_R <- read.csv(here("data", "MyRaw.txt")) ---- using 'here' to read in data
 ```
 
+
+# Instructions 9.24.26, deadline 
+
+- Jamie: add familiarity to lookup database, create lookup database, send Avery documentation R script
+- Avery: clean_3, binding lexical variables, document unit test text characteristics
+- Shawn: summary function and output, 
+
+
+
+
+
+
+
+
+
+
+
+
 # Load test texts
 ```{r}
 #Test_Text1 <- read.csv('data/Test_Text1.csv')
@@ -58,23 +76,50 @@ sampleText <- read.csv(file = "SampleText.csv", header = TRUE)
 
 ```
 
+# Notes
+
+Clean 1 does word/sentence counts.
+Clean 2 marks words as stopwords or not and calculates TTR and stopword proportion.
+
+
+
 # Variables for Summary Table
+## Default (Sparse) Set
 1. Document count (clean_1) <br>
 2. Total word/token count (all documents) (clean_1) <br>
-2. Average word count per-document (mean, sd, range) (clean_1) <br>
-3. Average sentence count per-document (mean, sd, range) (clean_1) <br>
-4. Average sentence length (in words) per-document (mean, sd, range) (clean_1) <br>
-5. Average proportion of stopwords per-document (mean, sd, range) (clean_2) <br>
-6. Average TTR per-document (clean_2) <br>
-7. Average word frequency per document (clean_3) (mean, sd, range, %missing vals)
-8. Average concreteness per document (clean_3) (mean, sd, range, %missing vals)
-9. Average valence per document (clean_3) (mean, sd, range, %missing vals)
-10. Average word length in letters per document (clean_3)
-12. Average age-of-acquisition word per document (clean_3)
+2. Average word count  (mean, sd, range) (clean_1) <br>
+3. Average sentence count  (mean, sd, range) (clean_1) <br>
+4. Average sentence length (in words)  (mean, sd, range) (clean_1) <br>
+5. Average proportion of stopwords  (mean, sd, range) (clean_2) <br>
+6. Average TTR  (clean_2) <br>
+7. Average word frequency (clean_3) (mean, sd, range, %missing vals)
+8. Average word length in letters per document (clean_3)
+
+
+## Full Set
+
+1. Everything above, plus:
+2. Average concreteness per document (clean_3) (mean, sd, range, %missing vals)
+3. Average valence per document (clean_3) (mean, sd, range, %missing vals)
+4. Average age-of-acquisition word per document (clean_3)
+5. Average arousal word per document (clean_3)
+6. Average familiarity word per document (clean_3)
+7. TTR pre stopword removal
+8. TTR post stopword removal
+
+
 
 # Variables to Consider Adding
 1.  Average morpheme count per document (clean_3)
 2.  Average Flesch-Kincaid 
+3.  Average familiarity per document, include argument for human or LLM rated (clean_3)
+
+
+# Arguments needed for one-shot function
+1. Human or LLM rated (default) lookup database
+2. describe_verbose: Sparse (FALSE; default) or comprehensive statistics about the corpus (TRUE) 
+3. by_document: Full corpus summary (FALSE; default) or per-document statistics (TRUE)
+
 
 # Define Cleaning and Computation functions
 ##Load replacements_25
