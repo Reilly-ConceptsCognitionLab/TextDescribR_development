@@ -85,14 +85,14 @@ Clean 2 marks words as stopwords or not and calculates TTR and stopword proporti
 
 # Variables for Summary Table
 ## Default (Sparse) Set
-1. Document count (clean_1) <br>
-2. Total word/token count (all documents) (clean_1) <br>
-2. Average word count  (mean, sd, range) (clean_1) <br>
-3. Average sentence count  (mean, sd, range) (clean_1) <br>
-4. Average sentence length (in words)  (mean, sd, range) (clean_1) <br>
-5. Average proportion of stopwords  (mean, sd, range) (clean_2) <br>
-6. Average TTR  (clean_2) <br>
-7. Average word frequency (clean_3) (mean, sd, range, %missing vals)
+1. Document count (clean_1) - DONE
+2. Total word/token count (all documents) (clean_1) - DONE
+2. Average word count  (mean, sd, range) (clean_1) - DONE
+3. Average sentence count  (mean, sd, range) (clean_1) - DONE
+4. Average sentence length (in words)  (mean, sd, range) (clean_1) - DONE
+5. Average proportion of stopwords  (mean, sd, range) (clean_2) - DONE
+6. Average TTR  (clean_2) - DONE
+7. Average word frequency (mean, sd, range, %missing vals) (clean_3) 
 8. Average word length in letters per document (clean_3)
 
 
@@ -104,8 +104,8 @@ Clean 2 marks words as stopwords or not and calculates TTR and stopword proporti
 4. Average age-of-acquisition word per document (clean_3)
 5. Average arousal word per document (clean_3)
 6. Average familiarity word per document (clean_3)
-7. TTR pre stopword removal
-8. TTR post stopword removal
+7. TTR pre stopword removal - DONE
+8. TTR post stopword removal - DONE
 
 
 
@@ -464,6 +464,174 @@ pipeline_summary <- function(object) {
   #total num of docs
   tot_doc <- stg1_dat %>%
     group_by(doc_id) %>%
+    summarize(n_words = n())
+  
+  
+  #sentences per document
+  sent_per_doc <- stg1_dat %>%
+    group_by(doc_id) %>%
+    summarize(nsent_per_doc = max(as.numeric((SentSeqID_ByDoc)))) %>%
+    left_join(tot_doc, by = "doc_id")
+  
+  
+    
+  
+  
+  
+  #words per sentence per doc
+  word_per_sent_per_doc <- stg1_dat %>%
+    group_by(doc_id, SentSeqID_ByDoc) %>%
+    summarize(nword_per_sent_per_doc = unique(LexStat_WordCount_PerSent)) %>%
+    summarize(mean_words_per_sent = mean(nword_per_sent_per_doc)) %>%
+    left_join(sent_per_doc, by = "doc_id")
+  
+  
+  
+
+  
+  
+  
+  
+  stg2_dat <- object$stage2_data
+  
+    #calculate stopword percentage
+  
+  stopword_summary <- stg2_dat %>%
+    group_by(doc_id) %>%
+    summarize(
+      n_stopwords = sum(is_stopword == TRUE),
+      stopword_perc = sum(is_stopword == TRUE) / n()) %>%
+    left_join(word_per_sent_per_doc, by = "doc_id")
+
+
+#group_by document number of unique over nrows
+#what to do with this?
+  
+  unique_word_summary <- stg2_dat %>%
+    group_by(doc_id) %>%
+    summarize(
+      unique_words_pre_stopword = length(unique(my_text)),
+      unique_perc_pre_stopword = length(unique(my_text)) / length(my_text)) %>%
+    left_join(stopword_summary, by = "doc_id")
+  
+  stopword_removed_unique_words <- stg2_dat %>%
+    group_by(doc_id) %>%
+    filter(is_stopword == FALSE) %>%
+    summarize(
+      unique_words_post_stopword = length(unique(my_text)),
+      unique_perc_post_stopword = length(unique(my_text)) / length(my_text)) %>%
+    left_join(unique_word_summary, by = "doc_id")
+  
+  
+  
+  
+  summary_df <- stopword_removed_unique_words %>%
+    summarize(
+      doc_count = n(),
+      total_word_count = sum(n_words),
+      avg_word_count = mean(n_words),
+      sd_word_count = sd(n_words),
+      min_word_count = min(n_words),
+      max_word_count = max(n_words),
+      avg_sent_count = mean(nsent_per_doc),
+      sd_sent_count = sd(nsent_per_doc),
+      min_sent_count = min(nsent_per_doc),
+      max_sent_count = max(nsent_per_doc),
+      avg_sent_length = mean(mean_words_per_sent),
+      sd_sent_length = sd(mean_words_per_sent),
+      min_sent_length = min(mean_words_per_sent),
+      max_sent_length = max(mean_words_per_sent),
+      avg_stopword_prop = mean(stopword_perc),
+      sd_stopword_prop = sd(stopword_perc),
+      min_stopword_prop = min(stopword_perc),
+      max_stopword_prop = max(stopword_perc),
+      avg_ttr_pre_stopword = mean(unique_perc_pre_stopword),
+      sd_ttr_pre_stopword = sd(unique_perc_pre_stopword),
+      min_ttr_pre_stopword = min(unique_perc_pre_stopword),
+      max_ttr_pre_stopword = max(unique_perc_pre_stopword),
+      avg_ttr_post_stopword = mean(unique_perc_post_stopword),
+      sd_ttr_post_stopword = sd(unique_perc_post_stopword),
+      min_ttr_post_stopword = min(unique_perc_post_stopword),
+      max_ttr_post_stopword = max(unique_perc_post_stopword)
+      #add word frequency (clean_3)
+      #add word length in letters per doc (clean_3)
+      
+    )
+  
+  
+  summary_long <- summary_df %>%
+    pivot_longer(cols = everything(),
+                 names_to = "metric",
+                 values_to = "value") %>%
+    mutate(value = round(value, 2))
+  
+  return(summary_long)
+  
+  
+  
+  
+  
+  
+  
+  
+  
+  
+}
+```
+
+
+
+```{r}
+test <- pipeline_summary(clean2_test)
+test
+```
+
+
+
+
+**do**:
+1. Load lookup database from ConversationAlign (don't store data in package) <br>
+```{r}
+
+```
+
+
+
+
+
+
+
+
+# RESOLVED
+1. Add informative error messages explaining to user `doc_id` and `my_text` fields <br>
+2. Generate `sentence_num` using seq_along in the first steps after tokenizing by sentence but before splitting into one word per row format <br>
+3. Generate `word_num` using seq_along after splitting and unlisting. Make sure to generate this on the grouped data (word_num sequentially ordered by document) <br>
+4. Count number of documents in corpus using levels, write to empty dataframe <br>
+5. Read data, add error message if user does not specify correct text fields and doc_ids <br>
+6. Convert `doc_id_field` to factor, group by `doc_id_field` for summary stats <br>
+7. Check to make sure that word count per sentence is correct <br>
+8. Make sure word sequence and sent sequence are correct <br>
+9. make sure replacements are working <br>
+
+
+
+
+# ARCHIVE CODE
+
+
+
+```{r}
+pipeline_summary <- function(object) {
+  
+  
+  
+  # STAGE 1 SUMMARIZATION
+  stg1_dat <- object$stage1_data
+  
+  
+  #total num of docs
+  tot_doc <- stg1_dat %>%
+    group_by(doc_id) %>%
     summarize(n = n()) %>%
     summarize(ndoc = n())
   
@@ -547,53 +715,6 @@ pipeline_summary <- function(object) {
   
 }
 ```
-
-
-
-```{r}
-test <- pipeline_summary(clean2_test)
-test
-```
-
-
-
-
-**do**:
-1. Load lookup database from ConversationAlign (don't store data in package) <br>
-```{r}
-
-```
-
-
-
-
-
-
-
-
-# RESOLVED
-1. Add informative error messages explaining to user `doc_id` and `my_text` fields <br>
-2. Generate `sentence_num` using seq_along in the first steps after tokenizing by sentence but before splitting into one word per row format <br>
-3. Generate `word_num` using seq_along after splitting and unlisting. Make sure to generate this on the grouped data (word_num sequentially ordered by document) <br>
-4. Count number of documents in corpus using levels, write to empty dataframe <br>
-5. Read data, add error message if user does not specify correct text fields and doc_ids <br>
-6. Convert `doc_id_field` to factor, group by `doc_id_field` for summary stats <br>
-7. Check to make sure that word count per sentence is correct <br>
-8. Make sure word sequence and sent sequence are correct <br>
-9. make sure replacements are working <br>
-
-
-
-I'm adding some test prose and code down here to test the markdown.
-
-```{r}
-try_it_out$stat2_mean_sent
-```
-
-
-
-
-# ARCHIVE CODE
 
 
 ```{r}
