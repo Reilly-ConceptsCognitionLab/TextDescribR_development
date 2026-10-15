@@ -15,7 +15,7 @@ output:
 knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = 'left', fig.path='Figs/', cache.path='Cache/', eval=T, echo=T, tidy=TRUE,  cache=F, message=F, warning=F, stringsAsFactors=F, yaml.eval.expr = TRUE)  
 
 library(xfun)
-pkg_attach("tidyverse", "here", "kableExtra", "RCurl", "psych", "knitr", "RColorBrewer", 'dplyr', 'tidyr', install=T)
+pkg_attach("tidyverse", "here", "kableExtra", "RCurl", "psych", "knitr", "RColorBrewer", 'dplyr', 'tidyr', 'gt', install=T)
 
 jamie.theme <- theme_bw() + theme(axis.line = element_line(colour = "black"), panel.grid.minor = element_blank(), panel.grid.major = element_blank(), panel.border = element_blank(), panel.background = element_blank(), legend.title= element_blank())  #custom theme ggplot2
 
@@ -491,6 +491,7 @@ pipeline_summary <- function(object) {
   
   
   
+  # STAGE 2 VARIABLES
   
   stg2_dat <- object$stage2_data
   
@@ -524,51 +525,145 @@ pipeline_summary <- function(object) {
   
   
   
+  #ASSEMBLING DOCUMENT-WISE TABLE
   
-  summary_df <- stopword_removed_unique_words %>%
-    summarize(
-      doc_count = n(),
-      total_word_count = sum(n_words),
-      avg_word_count = mean(n_words),
-      sd_word_count = sd(n_words),
-      min_word_count = min(n_words),
-      max_word_count = max(n_words),
-      avg_sent_count = mean(nsent_per_doc),
-      sd_sent_count = sd(nsent_per_doc),
-      min_sent_count = min(nsent_per_doc),
-      max_sent_count = max(nsent_per_doc),
-      avg_sent_length = mean(mean_words_per_sent),
-      sd_sent_length = sd(mean_words_per_sent),
-      min_sent_length = min(mean_words_per_sent),
-      max_sent_length = max(mean_words_per_sent),
-      avg_stopword_prop = mean(stopword_perc),
-      sd_stopword_prop = sd(stopword_perc),
-      min_stopword_prop = min(stopword_perc),
-      max_stopword_prop = max(stopword_perc),
-      avg_ttr_pre_stopword = mean(unique_perc_pre_stopword),
-      sd_ttr_pre_stopword = sd(unique_perc_pre_stopword),
-      min_ttr_pre_stopword = min(unique_perc_pre_stopword),
-      max_ttr_pre_stopword = max(unique_perc_pre_stopword),
-      avg_ttr_post_stopword = mean(unique_perc_post_stopword),
-      sd_ttr_post_stopword = sd(unique_perc_post_stopword),
-      min_ttr_post_stopword = min(unique_perc_post_stopword),
-      max_ttr_post_stopword = max(unique_perc_post_stopword)
-      #add word frequency (clean_3)
-      #add word length in letters per doc (clean_3)
-      
+  doc_gt <- stopword_removed_unique_words %>%
+    select(
+      doc_id,
+      n_words,
+      nsent_per_doc,
+      mean_words_per_sent,
+      n_stopwords,
+      stopword_perc,
+      unique_words_pre_stopword,
+      unique_perc_pre_stopword,
+      unique_words_post_stopword,
+      unique_perc_post_stopword
+  ) %>%
+    gt(rowname_col = "doc_id") %>%
+    tab_header(
+      title = "Document-Level Summary",
+      subtitle = paste0(format(nrow(stopword_removed_unique_words), big.mark = ","), " documents")
+    ) %>%
+      tab_spanner(label = "Length",
+                columns = c(n_words, nsent_per_doc, mean_words_per_sent)) %>%
+      tab_spanner(label = "Stopwords",
+                  columns = c(n_stopwords, stopword_perc)) %>%
+      tab_spanner(label = "Stopwords included",
+                  columns = c(unique_words_pre_stopword, unique_perc_pre_stopword)) %>%
+      tab_spanner(label = "Stopwords removed",
+                  columns = c(unique_words_post_stopword, unique_perc_post_stopword)) %>%
+      tab_spanner(label = "Unique words", columns = c(
+        unique_words_pre_stopword, unique_perc_pre_stopword,
+        unique_words_post_stopword, unique_perc_post_stopword)) %>%
+      cols_label(
+      n_words                    = "Words",
+      nsent_per_doc              = "Sentences",
+      mean_words_per_sent        = "Words / sentence",
+      n_stopwords                = "Count",
+      stopword_perc              = "Proportion",
+      unique_words_pre_stopword  = "Count",
+      unique_perc_pre_stopword   = "TTR",
+      unique_words_post_stopword = "Count",
+      unique_perc_post_stopword  = "TTR"
+    ) %>%
+    fmt_number(columns = c(n_words, nsent_per_doc, n_stopwords,
+                           unique_words_pre_stopword, unique_words_post_stopword),
+               decimals = 0) %>%
+    fmt_number(columns = mean_words_per_sent, decimals = 1) %>%
+    fmt_number(columns = c(stopword_perc, unique_perc_pre_stopword,
+                           unique_perc_post_stopword),
+               decimals = 3) %>%
+    cols_align(align = "center", columns = -doc_id) %>%
+    tab_stubhead(label = "Document") %>%
+    tab_source_note("Note. TTR = type-token ratio (unique words / total words) within each document.") %>%
+    tab_options(
+      table.font.names                  = "Helvetica",
+      table.border.top.style            = "hidden",
+      table.border.bottom.color         = "black",
+      heading.align                     = "left",
+      heading.border.bottom.color       = "black",
+      column_labels.border.top.color    = "black",
+      column_labels.border.bottom.color = "black",
+      column_labels.font.weight         = "bold",
+      table_body.hlines.color           = "#E5E5E5",
+      data_row.padding                  = px(6)
+    )
+
+   
+  
+  
+  
+  
+  
+  
+  
+  # ASSEMBLING CORPUS-WISE TABLE
+
+  corpus_df <- stopword_removed_unique_words
+  
+  
+  n_docs <- nrow(corpus_df)
+  total_words <- sum(corpus_df$n_words)
+  
+  metrics <- tribble(
+    ~var, ~label,
+        "n_words",                  "Words per document",
+    "nsent_per_doc",            "Sentences per document",
+    "mean_words_per_sent",      "Mean words per sentence",
+    "stopword_perc",            "Stopword proportion",    
+    "unique_perc_pre_stopword", "Type-token ratio (stopwords included)",
+    "unique_perc_post_stopword","Type-token ratio (stopwords removed)"
     )
   
   
-  summary_long <- summary_df %>%
-    pivot_longer(cols = everything(),
-                 names_to = "metric",
-                 values_to = "value") %>%
-    mutate(value = round(value, 2))
+  summary_table <- metrics %>%
+    rowwise() %>%
+    mutate(
+      Mean = mean(doc_df[[var]], na.rm = TRUE),
+      SD   = sd(doc_df[[var]],   na.rm = TRUE),
+      Min  = min(doc_df[[var]],  na.rm = TRUE),
+      Max  = max(doc_df[[var]],  na.rm = TRUE)
+    ) %>%
+    ungroup()
   
-  return(summary_long)
+
+
+  
+  prop_vars <- c("stopword_perc", "unique_perc_pre_stopword",
+                 "unique_perc_post_stopword")
+
+  count_rows <- which(!summary_table$var %in% prop_vars)
+  prop_rows  <- which(summary_table$var %in% prop_vars)
   
   
+  summary_gt <- summary_table %>%
+    select(-var) %>%
+    gt(rowname_col = "label") %>%
+    tab_header(
+      title = "Corpus Summary",
+      subtitle = paste0(format(n_docs, big.mark = ","), " documents  |  ",
+                      format(total_words, big.mark = ","), " total words")) %>%
+    tab_spanner(label = "Across documents", columns = c(Mean, SD, Min, Max)) %>% 
+    fmt_number(columns = c(Mean, SD, Min, Max), rows = count_rows, decimals = 1) %>%
+    fmt_number(columns = c(Mean, SD, Min, Max), rows = prop_rows,  decimals = 3) %>%
+    cols_align(align = "center", columns = c(Mean, SD, Min, Max)) %>%
+    tab_options(
+    table.font.names                  = "Helvetica",
+    table.border.top.style            = "hidden",
+    table.border.bottom.color         = "black",
+    heading.align                     = "left",
+    heading.border.bottom.color       = "black",
+    column_labels.border.top.color    = "black",
+    column_labels.border.bottom.color = "black",
+    column_labels.font.weight         = "bold",
+    table_body.hlines.color           = "#E5E5E5",
+    data_row.padding                  = px(6)
+  )
   
+  
+  list(document = doc_gt,
+       summary = summary_gt)
   
   
   
@@ -617,6 +712,48 @@ test
 
 
 # ARCHIVE CODE
+
+
+
+```{r}
+
+  
+  summary_df <- stopword_removed_unique_words %>%
+    summarize(
+      doc_count = n(),
+      total_word_count = sum(n_words),
+      avg_word_count = mean(n_words),
+      sd_word_count = sd(n_words),
+      min_word_count = min(n_words),
+      max_word_count = max(n_words),
+      avg_sent_count = mean(nsent_per_doc),
+      sd_sent_count = sd(nsent_per_doc),
+      min_sent_count = min(nsent_per_doc),
+      max_sent_count = max(nsent_per_doc),
+      avg_sent_length = mean(mean_words_per_sent),
+      sd_sent_length = sd(mean_words_per_sent),
+      min_sent_length = min(mean_words_per_sent),
+      max_sent_length = max(mean_words_per_sent),
+      avg_stopword_prop = mean(stopword_perc),
+      sd_stopword_prop = sd(stopword_perc),
+      min_stopword_prop = min(stopword_perc),
+      max_stopword_prop = max(stopword_perc),
+      avg_ttr_pre_stopword = mean(unique_perc_pre_stopword),
+      sd_ttr_pre_stopword = sd(unique_perc_pre_stopword),
+      min_ttr_pre_stopword = min(unique_perc_pre_stopword),
+      max_ttr_pre_stopword = max(unique_perc_pre_stopword),
+      avg_ttr_post_stopword = mean(unique_perc_post_stopword),
+      sd_ttr_post_stopword = sd(unique_perc_post_stopword),
+      min_ttr_post_stopword = min(unique_perc_post_stopword),
+      max_ttr_post_stopword = max(unique_perc_post_stopword)
+      #add word frequency (clean_3)
+      #add word length in letters per doc (clean_3)
+      
+    )
+  
+  
+```
+
 
 
 
