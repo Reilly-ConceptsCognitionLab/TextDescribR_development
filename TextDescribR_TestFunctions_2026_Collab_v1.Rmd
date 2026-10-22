@@ -82,6 +82,16 @@ Clean 1 does word/sentence counts.
 Clean 2 marks words as stopwords or not and calculates TTR and stopword proportion.
 
 
+# Read Function
+
+Want to have a function that:
+1. Given a directory
+2. Pulls all files into a list
+3. Collapses the list into data frame, one row per document
+4. doc_id is the file name, my_text is the text content
+5. Print a warning that everything in the folder will be read and that it will retain file name
+
+
 
 # Variables for Summary Table
 ## Default (Sparse) Set
@@ -438,6 +448,41 @@ clean_2 <- function(dat_list) {
 clean2_test <- clean_2(sampleTest)
 
 clean2_test$summary_df
+clean2_test$stage2_data
+```
+
+
+
+
+# clean_3
+
+```{r}
+
+dat <- clean2_test
+clean_3 <- function(dat) {
+  
+  
+  dat_tmp <- clean2_test$stage2_data
+  
+  #database1 <- some database
+  # load other databases
+  
+  stage3_data <- dat_tmp %>%
+    left_join(database, by = "my_text") %>%
+    left_join(database2, by = "my_text") #etc etc
+  
+  
+  
+  joined_list <- c(stage3_data, clean2_test)
+  
+  return(joined_list)
+  
+  
+  
+  
+  
+  
+}
 ```
 
 
@@ -561,7 +606,7 @@ tab_spanner(label = "Unique words (stopwords)",
       nsent_per_doc              = "Sentences",
       mean_words_per_sent        = "Words / sentence",
       n_stopwords                = "Count",
-      stopword_perc              = "Proportion",
+      stopword_perc              = "Proportion (%)",
       unique_words_pre_stopword  = "Count",
       unique_perc_pre_stopword   = "TTR",
       unique_words_post_stopword = "Count",
@@ -570,10 +615,10 @@ tab_spanner(label = "Unique words (stopwords)",
     fmt_number(columns = c(n_words, nsent_per_doc, n_stopwords,
                            unique_words_pre_stopword, unique_words_post_stopword),
                decimals = 0) %>%
-    fmt_number(columns = mean_words_per_sent, decimals = 1) %>%
+    fmt_number(columns = mean_words_per_sent, decimals = 2) %>%
     fmt_number(columns = c(stopword_perc, unique_perc_pre_stopword,
                            unique_perc_post_stopword),
-               decimals = 3) %>%
+               decimals = 2) %>%
     cols_align(align = "center", columns = -doc_id) %>%
     tab_stubhead(label = "Document") %>%
     tab_options(
@@ -598,6 +643,9 @@ tab_spanner(label = "Unique words (stopwords)",
   
   
   # ASSEMBLING CORPUS-WISE TABLE
+  
+  
+  #ADD WEIGHTED AVERAGE IN ADDITION TO SIMPLE AVERAGE FOR ALL AVERAGE METRICS
 
   corpus_df <- stopword_removed_unique_words
   
@@ -610,7 +658,7 @@ tab_spanner(label = "Unique words (stopwords)",
         "n_words",                  "Words per document",
     "nsent_per_doc",            "Sentences per document",
     "mean_words_per_sent",      "Mean words per sentence",
-    "stopword_perc",            "Stopword proportion",    
+    "stopword_perc",            "Stopword %",    
     "unique_perc_pre_stopword", "Type-token ratio (stopwords included)",
     "unique_perc_post_stopword","Type-token ratio (stopwords removed)"
     )
@@ -619,10 +667,10 @@ tab_spanner(label = "Unique words (stopwords)",
   summary_table <- metrics %>%
     rowwise() %>%
     mutate(
-      Mean = mean(doc_df[[var]], na.rm = TRUE),
-      SD   = sd(doc_df[[var]],   na.rm = TRUE),
-      Min  = min(doc_df[[var]],  na.rm = TRUE),
-      Max  = max(doc_df[[var]],  na.rm = TRUE)
+      Mean = mean(corpus_df[[var]], na.rm = TRUE),
+      SD   = sd(corpus_df[[var]],   na.rm = TRUE),
+      Min  = min(corpus_df[[var]],  na.rm = TRUE),
+      Max  = max(corpus_df[[var]],  na.rm = TRUE)
     ) %>%
     ungroup()
   
@@ -644,8 +692,8 @@ tab_spanner(label = "Unique words (stopwords)",
       subtitle = paste0(format(n_docs, big.mark = ","), " documents  |  ",
                       format(total_words, big.mark = ","), " total words")) %>%
     tab_spanner(label = "Across documents", columns = c(Mean, SD, Min, Max)) %>% 
-    fmt_number(columns = c(Mean, SD, Min, Max), rows = count_rows, decimals = 1) %>%
-    fmt_number(columns = c(Mean, SD, Min, Max), rows = prop_rows,  decimals = 3) %>%
+    fmt_number(columns = c(Mean, SD, Min, Max), rows = count_rows, decimals = 2) %>%
+    fmt_number(columns = c(Mean, SD, Min, Max), rows = prop_rows,  decimals = 2) %>%
     cols_align(align = "center", columns = c(Mean, SD, Min, Max)) %>%
     tab_options(
     table.font.names                  = "Helvetica",
@@ -677,6 +725,10 @@ tab_spanner(label = "Unique words (stopwords)",
 
 ```{r}
 pipeline_summary(clean2_test)
+
+
+#two significant digits
+#percentages
 
 ```
 
