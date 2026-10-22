@@ -12,7 +12,7 @@ output:
 ---
 
 ```{r setup, include=F}
-knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = 'left', fig.path='Figs/', cache.path='Cache/', eval=T, echo=T, tidy=TRUE,  cache=F, message=F, warning=F, stringsAsFactors=F, yaml.eval.expr = TRUE)  
+knitr::opts_chunk$set(fig.width=8, fig.height=5, fig.align = 'left', fig.path='Figs/', cache.path='Cache/', eval=T, echo=T, tidy=TRUE,  cache=F, message=F, stringsAsFactors=F, yaml.eval.expr = TRUE)  
 
 library(xfun)
 pkg_attach("tidyverse", "here", "kableExtra", "RCurl", "psych", "knitr", "RColorBrewer", 'dplyr', 'tidyr', 'gt', install=T)
@@ -195,6 +195,78 @@ replacements_25 <- function(dat, wordcol) {
 }
 
 ```
+
+
+
+## read_dir
+
+Point it at a directory and it will add all files into a list, and then condense that list into a data frame that is in the shape needed for cleaning downstream. 
+
+
+```{r}
+
+test_dir <- "/Users/shawnwang/Documents/School/Projects/Collaborations/TextDescribR_development/test_corpus"
+read_dir <- function(dir) {
+  
+  if (!dir.exists(dir)) {
+    
+    stop("Directory not found: ", dir)
+    
+  }
+  
+  
+  
+  
+  
+  warning("Warning! This function reads through every file in the directory you are supplying to it. Make sure that you only have data you want processed in this directory.")
+  
+  files_paths <- list.files(dir, full.names = TRUE)
+  
+  #checking for txt files
+  is_txt <- grepl("\\.txt$", files_paths, ignore.case = TRUE)
+  txt_files <- files_paths[is_txt]
+  skipped <- basename(files_paths[!is_txt])
+  
+  
+  if (length(skipped) > 0) {
+    
+    warning(
+      length(skipped),
+      " non txt files were skipped: ",
+      paste(skipped, collapse = ", ")
+      
+    )
+    
+  }
+  
+  
+  files_list <- txt_files %>%
+    map(read_file) %>%
+    set_names(tools::file_path_sans_ext(basename(txt_files)))
+  
+  files_df <- files_list %>%
+    imap_dfr(~ tibble(doc_id = .y, my_text = .x))
+  
+  
+  
+  return(files_df)
+  
+  
+  
+}
+
+
+
+read_dir_test <- read_dir(test_dir)
+```
+
+
+
+
+
+
+
+
 
 ## Clean_1 (Sentence Level)
 Cleans and tokenizes by sentence to derive sentence level analytics. Formats dataframe after doing initial cleaning. Generates the following stats: <br>
