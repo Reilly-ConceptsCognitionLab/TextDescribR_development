@@ -714,7 +714,11 @@ tab_spanner(label = "Unique words (stopwords)",
       stub.border.style                = "none",
       table_body.vlines.style          = "none",
       column_labels.vlines.style       = "none"
-    )
+    ) %>%
+    tab_style(
+  style = cell_text(align = "center"),
+  locations = cells_stubhead()
+)
 
    
   
