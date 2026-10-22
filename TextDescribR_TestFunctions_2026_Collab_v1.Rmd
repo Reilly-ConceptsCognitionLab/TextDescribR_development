@@ -708,7 +708,7 @@ tab_spanner(label = "Unique words (stopwords)",
       column_labels.border.top.color    = "black",
       column_labels.border.bottom.color = "black",
       column_labels.font.weight         = "bold",
-      table_body.hlines.color           = "#E5E5E5",
+      table_body.hlines.style           = "none",
       data_row.padding                  = px(6),
       column_labels.padding.horizontal = px(0),
       stub.border.style                = "none",
@@ -806,7 +806,7 @@ nonstop <- stg2_dat %>% filter(is_stopword == FALSE)
       stub() ~ px(260),
       everything() ~ px(75)
     ) %>%
-    tab_source_note("Note. Across documents: each document contributes one value. Pooled: all sentences (or tokens) in the corpus are treated as one sample, so longer documents contribute more. TTR = type-token ratio.") %>%
+    tab_source_note("Note. Across documents: each document contributes the same weight to each statistic. Pooled: all tokens in the corpus are treated as one sample, so longer documents contribute more. TTR = type-token ratio.") %>%
     tab_options(
       table.width                       = pct(100),
       table.font.names                  = "Helvetica",
@@ -817,7 +817,7 @@ nonstop <- stg2_dat %>% filter(is_stopword == FALSE)
       column_labels.border.top.color    = "black",
       column_labels.border.bottom.color = "black",
       column_labels.font.weight         = "bold",
-      table_body.hlines.color           = "#E5E5E5",
+      table_body.hlines.style           = "none",
       data_row.padding                  = px(6),
       column_labels.padding.horizontal = px(0),
       stub.border.style                = "none",
