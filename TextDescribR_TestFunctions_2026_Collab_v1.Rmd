@@ -82,7 +82,7 @@ Clean 1 does word/sentence counts.
 Clean 2 marks words as stopwords or not and calculates TTR and stopword proportion.
 
 
-# Read Function
+# Read Function - DONE
 
 Want to have a function that:
 1. Given a directory
@@ -205,9 +205,11 @@ Point it at a directory and it will add all files into a list, and then condense
 
 ```{r}
 
-test_dir <- "/Users/shawnwang/Documents/School/Projects/Collaborations/TextDescribR_development/test_corpus"
+
 read_dir <- function(dir) {
   
+  
+  #check if directory exists
   if (!dir.exists(dir)) {
     
     stop("Directory not found: ", dir)
@@ -216,18 +218,18 @@ read_dir <- function(dir) {
   
   
   
-  
-  
   warning("Warning! This function reads through every file in the directory you are supplying to it. Make sure that you only have data you want processed in this directory.")
   
+  
+  #list files in directory
   files_paths <- list.files(dir, full.names = TRUE)
   
-  #checking for txt files
+  #checking for txt files in the directory
   is_txt <- grepl("\\.txt$", files_paths, ignore.case = TRUE)
   txt_files <- files_paths[is_txt]
   skipped <- basename(files_paths[!is_txt])
   
-  
+  #list which files were skipped
   if (length(skipped) > 0) {
     
     warning(
@@ -239,11 +241,12 @@ read_dir <- function(dir) {
     
   }
   
-  
+  #bring files into list form
   files_list <- txt_files %>%
     map(read_file) %>%
     set_names(tools::file_path_sans_ext(basename(txt_files)))
   
+  #turn list into data frame
   files_df <- files_list %>%
     imap_dfr(~ tibble(doc_id = .y, my_text = .x))
   
@@ -256,7 +259,7 @@ read_dir <- function(dir) {
 }
 
 
-
+test_dir <- "/Users/shawnwang/Documents/School/Projects/Collaborations/TextDescribR_development/test_corpus"
 read_dir_test <- read_dir(test_dir)
 ```
 
@@ -445,7 +448,7 @@ colnames(try_it_out$data)
 
 
 
-sampleTest <- clean_1(sampleText, text_field = "my_text", doc_id_field = "doc_id")
+sampleTest <- clean_1(read_dir_test, text_field = "my_text", doc_id_field = "doc_id")
 test_df <- sampleTest$stage1_data
 ```
 
