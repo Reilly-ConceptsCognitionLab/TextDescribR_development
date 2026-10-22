@@ -573,6 +573,8 @@ clean_3 <- function(dat) {
 6. Average TTR per-document (clean_2) <br>
 
 ```{r}
+
+object <- clean2_test
 pipeline_summary <- function(object) {
   
   
@@ -697,6 +699,7 @@ tab_spanner(label = "Unique words (stopwords)",
     cols_align(align = "center", columns = -doc_id) %>%
     tab_stubhead(label = "Document") %>%
     tab_options(
+      table.width                       = pct(100),
       table.font.names                  = "Helvetica",
       table.border.top.style            = "hidden",
       table.border.bottom.color         = "black",
@@ -706,7 +709,11 @@ tab_spanner(label = "Unique words (stopwords)",
       column_labels.border.bottom.color = "black",
       column_labels.font.weight         = "bold",
       table_body.hlines.color           = "#E5E5E5",
-      data_row.padding                  = px(6)
+      data_row.padding                  = px(6),
+      column_labels.padding.horizontal = px(0),
+      stub.border.style                = "none",
+      table_body.vlines.style          = "none",
+      column_labels.vlines.style       = "none"
     )
 
    
@@ -723,8 +730,6 @@ tab_spanner(label = "Unique words (stopwords)",
   #ADD WEIGHTED AVERAGE IN ADDITION TO SIMPLE AVERAGE FOR ALL AVERAGE METRICS
 
   corpus_df <- stopword_removed_unique_words
-  
-  
   n_docs <- nrow(corpus_df)
   total_words <- sum(corpus_df$n_words)
   
@@ -738,50 +743,90 @@ tab_spanner(label = "Unique words (stopwords)",
     "unique_perc_post_stopword","Type-token ratio (stopwords removed)"
     )
   
-  
-  summary_table <- metrics %>%
+  #simple - each doc counts equally
+  doc_avg <- metrics %>%
     rowwise() %>%
     mutate(
-      Mean = mean(corpus_df[[var]], na.rm = TRUE),
-      SD   = sd(corpus_df[[var]],   na.rm = TRUE),
-      Min  = min(corpus_df[[var]],  na.rm = TRUE),
-      Max  = max(corpus_df[[var]],  na.rm = TRUE)
+      doc_mean = mean(corpus_df[[var]], na.rm = TRUE),
+      doc_sd   = sd(corpus_df[[var]],   na.rm = TRUE),
+      doc_min  = min(corpus_df[[var]],  na.rm = TRUE),
+      doc_max  = max(corpus_df[[var]],  na.rm = TRUE)
     ) %>%
     ungroup()
   
+  
+  
+  sent_level <- stg1_dat %>%
+  distinct(doc_id, SentSeqID_ByDoc, LexStat_WordCount_PerSent)
+
+nonstop <- stg2_dat %>% filter(is_stopword == FALSE)
+  
+  #pooled - all tokens treated as one sample
+  pooled <- tribble(
+    ~var,                        ~pool_mean,                                         ~pool_sd,                                  ~pool_min,                                 ~pool_max,
+    "n_words",                   NA_real_,                                           NA_real_,                                  NA_real_,                                  NA_real_,
+    "nsent_per_doc",             NA_real_,                                           NA_real_,                                  NA_real_,                                  NA_real_,
+    "mean_words_per_sent",       mean(sent_level$LexStat_WordCount_PerSent),         sd(sent_level$LexStat_WordCount_PerSent),  min(sent_level$LexStat_WordCount_PerSent), max(sent_level$LexStat_WordCount_PerSent),
+    "stopword_perc",             mean(stg2_dat$is_stopword == TRUE, na.rm = TRUE),   NA_real_,                                  NA_real_,                                  NA_real_,
+    "unique_perc_pre_stopword",  n_distinct(stg2_dat$my_text) / nrow(stg2_dat),      NA_real_,                                  NA_real_,                                  NA_real_,
+    "unique_perc_post_stopword", n_distinct(nonstop$my_text)  / nrow(nonstop),       NA_real_,                                  NA_real_,                                  NA_real_
+  )
+
+    
+    
+
+  summary_table <- doc_avg %>%
+    left_join(pooled, by = "var") %>%
+    select(-var)
+    
+  
 
 
   
-  prop_vars <- c("stopword_perc", "unique_perc_pre_stopword",
-                 "unique_perc_post_stopword")
 
-  count_rows <- which(!summary_table$var %in% prop_vars)
-  prop_rows  <- which(summary_table$var %in% prop_vars)
-  
   
   summary_gt <- summary_table %>%
-    select(-var) %>%
     gt(rowname_col = "label") %>%
     tab_header(
       title = "Corpus Summary",
       subtitle = paste0(format(n_docs, big.mark = ","), " documents  |  ",
-                      format(total_words, big.mark = ","), " total words")) %>%
-    tab_spanner(label = "Across documents", columns = c(Mean, SD, Min, Max)) %>% 
-    fmt_number(columns = c(Mean, SD, Min, Max), rows = count_rows, decimals = 2) %>%
-    fmt_number(columns = c(Mean, SD, Min, Max), rows = prop_rows,  decimals = 2) %>%
-    cols_align(align = "center", columns = c(Mean, SD, Min, Max)) %>%
+                        format(total_words, big.mark = ","), " total words")) %>%
+    tab_spanner(label = "Across documents",
+                columns = c(doc_mean, doc_sd, doc_min, doc_max)) %>%
+    tab_spanner(label = "Pooled across corpus",
+                columns = c(pool_mean, pool_sd, pool_min, pool_max)) %>%
+    cols_label(
+      doc_mean = "Mean", doc_sd = "SD", doc_min = "Min", doc_max = "Max",
+      pool_mean = "Mean", pool_sd = "SD", pool_min = "Min", pool_max = "Max"
+    ) %>%
+    fmt_number(columns = -label, decimals = 2) %>%
+    sub_missing(missing_text = "\u2014") %>%
+    cols_align(align = "center", columns = everything()) %>%
+    cols_width(
+      stub() ~ px(260),
+      everything() ~ px(75)
+    ) %>%
+    tab_source_note("Note. Across documents: each document contributes one value. Pooled: all sentences (or tokens) in the corpus are treated as one sample, so longer documents contribute more. TTR = type-token ratio.") %>%
     tab_options(
-    table.font.names                  = "Helvetica",
-    table.border.top.style            = "hidden",
-    table.border.bottom.color         = "black",
-    heading.align                     = "left",
-    heading.border.bottom.color       = "black",
-    column_labels.border.top.color    = "black",
-    column_labels.border.bottom.color = "black",
-    column_labels.font.weight         = "bold",
-    table_body.hlines.color           = "#E5E5E5",
-    data_row.padding                  = px(6)
-  )
+      table.width                       = pct(100),
+      table.font.names                  = "Helvetica",
+      table.border.top.style            = "hidden",
+      table.border.bottom.color         = "black",
+      heading.align                     = "left",
+      heading.border.bottom.color       = "black",
+      column_labels.border.top.color    = "black",
+      column_labels.border.bottom.color = "black",
+      column_labels.font.weight         = "bold",
+      table_body.hlines.color           = "#E5E5E5",
+      data_row.padding                  = px(6),
+      column_labels.padding.horizontal = px(0),
+      stub.border.style                = "none",
+      table_body.vlines.style          = "none",
+      column_labels.vlines.style       = "none"
+    )
+  
+  
+
   
   
   list(document = doc_gt,
@@ -794,12 +839,21 @@ tab_spanner(label = "Unique words (stopwords)",
   
   
 }
+
+
+
+pipeline_summary(clean2_test)
 ```
 
 
 
+
+
+
+
+
 ```{r}
-pipeline_summary(clean2_test)
+
 
 
 #two significant digits
