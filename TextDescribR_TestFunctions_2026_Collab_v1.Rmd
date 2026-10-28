@@ -574,7 +574,7 @@ clean_3 <- function(dat) {
 
 ```{r}
 
-object <- clean2_test
+
 pipeline_summary <- function(object) {
   
   
@@ -856,14 +856,6 @@ pipeline_summary(clean2_test)
 
 
 
-```{r}
-
-
-
-#two significant digits
-#percentages
-
-```
 
 
 
